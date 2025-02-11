@@ -93,9 +93,10 @@ void loop() {
   bool isAnyChange = false;
   int32_t numPinsActive = 0;
   int32_t knownSwitchPosition = 7;
+
   for (int32_t i = 0; i < positionLineCount; i++) {
     bool thisPin = (digitalRead(positionLinePins[i]) == LOW);
-    lastLineValues[i] = currLineValues;
+    lastLineValues[i] = currLineValues[i];
     currLineValues[i] = thisPin;
     
     if (thisPin) {
