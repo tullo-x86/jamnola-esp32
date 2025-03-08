@@ -83,16 +83,31 @@ void setup() {
   pinMode(14, INPUT_PULLUP);
   pinMode(15, INPUT_PULLUP);
   pinMode(16, INPUT); // external 2k2 pullup
-  pinMode(32, INPUT); // external 10k pullup
+  pinMode(32, INPUT_PULLUP);
   pinMode(33, INPUT_PULLUP);
-  pinMode(34, INPUT_PULLUP);  
+  pinMode(34, INPUT);
+}
+
+void printValues(bool *vals) {
+  for (int i = 0; i < positionLineCount; i++) {
+    Serial.print(" ");
+    Serial.print((int)(vals[i]));
+  }
 }
 
 void loop() {
+
   // Fetch all the pins
   bool isAnyChange = false;
   int32_t numPinsActive = 0;
   int32_t knownSwitchPosition = 7;
+
+
+  Serial.print("Previous frame:");
+  printValues(lastLineValues);
+  Serial.println();
+
+  Serial.print("This frame:");
 
   for (int32_t i = 0; i < positionLineCount; i++) {
     bool thisPin = (digitalRead(positionLinePins[i]) == LOW);
@@ -102,6 +117,8 @@ void loop() {
     if (thisPin) {
       numPinsActive += 1;
       knownSwitchPosition = i;
+      Serial.print(" ");
+      Serial.print(i);
     }
 
     if (lastLineValues[i] != currLineValues[i]) {
@@ -109,11 +126,20 @@ void loop() {
     }
   }
 
+  if (numPinsActive > 0) {
+    Serial.println(".");
+  }
+  else {
+    Serial.println(" none.");
+  }
+
   // If there's been a change and any valid number of pins is being pulled low, send a message
   if (isAnyChange && numPinsActive < 2) {
+    Serial.print("Known switch position: ");
+    Serial.println(knownSwitchPosition);
     sendMsg(knownSwitchPosition);
   }
 
-  delay(10);
+  delay(100);
 }
 
