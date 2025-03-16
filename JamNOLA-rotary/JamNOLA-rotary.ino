@@ -98,6 +98,13 @@ void printValues(bool *vals) {
   }
 }
 
+const int LOOP_DELAY_MS = 20;
+const int DEBOUNCE_WAIT_MS = 150;
+const int NO_PENDING_MESSAGE_SENTINEL = -1;
+
+int debounceCountdownMs = 0;
+int pendingPositionMessage = NO_PENDING_MESSAGE_SENTINEL;
+
 void loop() {
 
   // Fetch all the pins
@@ -141,13 +148,32 @@ void loop() {
   }
 #endif
 
-  // If there's been a change and any valid number of pins is being pulled low, send a message
+  // If there's been a change and any valid number of pins is being pulled low, run debounce
   if (isAnyChange && numPinsActive < 2) {
-    Serial.print("Sending switch position: ");
-    Serial.println(knownSwitchPosition);
-    sendMsg(knownSwitchPosition);
+    pendingPositionMessage = knownSwitchPosition;
+    debounceCountdownMs = DEBOUNCE_WAIT_MS;
+    Serial.print("Debounce: waiting ");
+    Serial.print(debounceCountdownMs);
+    Serial.println("ms...");
   }
 
-  delay(50);
+  delay(LOOP_DELAY_MS);
+
+  // After debounce timeout, send a message exactly once
+
+  debounceCountdownMs -= LOOP_DELAY_MS;
+  // Constants may not be multiples of one another -- ensure this won't break things
+  if (debounceCountdownMs <= 0) {
+    debounceCountdownMs = 0; 
+  }
+
+  if (debounceCountdownMs == 0 && pendingPositionMessage != NO_PENDING_MESSAGE_SENTINEL) {
+    Serial.print("Sending message with switch position: ");
+    Serial.println(pendingPositionMessage);
+    sendMsg(pendingPositionMessage);
+
+    // Clear the message
+    pendingPositionMessage = NO_PENDING_MESSAGE_SENTINEL;
+  }
 }
 
